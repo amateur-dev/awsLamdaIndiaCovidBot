@@ -1,0 +1,22 @@
+service: awscovidbot
+
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+
+functions:
+  awscovidbot:
+  
+    handler: handler.covidbot
+    
+    events:
+
+      - http:
+
+          path: covidbot
+
+          method: post
+
+          cors: true
