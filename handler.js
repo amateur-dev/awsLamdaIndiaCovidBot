@@ -77,7 +77,7 @@ module.exports.covidbot = async event => {
     message = "Thank you for pinging this Bot. We hope to provide you with relevant and official data in relation to the COVID Virus in India. To use the bot, please use the slash button below";
   } else if (/\/getlatestcountrycount/i.test(text)){
     let result = await getCovidData();
-    let totalCount = result.summary;
+    let totalCount = result.summary.total;
     message = `As per the last published official data, the total number of COVID positive patients in India have been ${totalCount}`; 
   } else if (/\/getstatedata/i.test(text)) {
     message = `State Codes:\n${stateCodeString}\nSure, please choose from the above mentioned State Codes and reply \"Code:XX\"\n`;
