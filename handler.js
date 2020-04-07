@@ -73,8 +73,8 @@ module.exports.covidbot = async event => {
   const { chat, text } = body.message;
   // let message = await getCovidData();
   
-  if (/\/start/i.test(text)) {
-    message = "Thank you for pinging this Bot. We hope to provide you with relevant and official data in relation to the COVID Virus in India";
+  if (/\/start/i.test(text) || /\/hi/i.test(text) ) {
+    message = "Thank you for pinging this Bot. We hope to provide you with relevant and official data in relation to the COVID Virus in India. To use the bot, please use the slash button below";
   } else if (/\/getlatestcountrycount/i.test(text)){
     let result = await getCovidData();
     let totalCount = result.summary;
