@@ -80,7 +80,7 @@ module.exports.covidbot = async event => {
     let totalCount = result.summary;
     message = `As per the last published official data, the total number of COVID positive patients in India have been ${totalCount}`; 
   } else if (/\/getstatedata/i.test(text)) {
-    message = `Sure, please choose from the below mentioned State Codes and reply \"Code:XX\"\n${stateCodeString}`;
+    message = `State Codes:\n${stateCodeString}\nSure, please choose from the above mentioned State Codes and reply \"Code:XX\"\n`;
   } else if (/Code/i.test(text)) {
     let stateCodeChosen = stringSplitter(text);
     let state = stateCodes[stateCodeChosen];
