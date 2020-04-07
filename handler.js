@@ -135,7 +135,7 @@ module.exports.covidbot = async event => {
       let regionDetails = await getPinCodeDetails(Number(pinCodeReplied));
       try {
         let regionReply = await getDistrictDetails(regionDetails[0], regionDetails[1]);
-        message = `The total __unofficial__ number of confirmed cases in this district are ${regionReply[0]}; the number of patients confirmed in the last 24 hours are ${regionReply[1]}.`
+        message = `The total __unofficial__ number of confirmed cases in ${regionDetails[1]}, ${regionDetails[0]} are ${regionReply[0]}; the number of patients confirmed in the last 24 hours are ${regionReply[1]}.`
       } catch (error) {
         message = "Apologies, the Pin Code that you have entered did not generate any results. Either no case has been reported for this Pin Code or the Pin Code is wrong."
       }
