@@ -7,6 +7,10 @@ async function getCovidData() {
   return (reply.data.data)
 };
 
+// https://api.covid19india.org/
+// https://api.covid19india.org/v2/state_district_wise.json
+// https://api.postalpincode.in/pincode/400001
+
 async function sendToUser(chat_id, text) {
   const options = {
     method: 'GET',
@@ -88,7 +92,7 @@ module.exports.covidbot = async event => {
     let regionalData = result.regional;
     let relevantStateDataObject = regionalData.find(obj => obj.loc == state);
     if (relevantStateDataObject == undefined) {
-      message = "Good News, the state chosen does not seem to have any COVID case."
+      message = "Sorry, we did not get any data for this State. Either there has been no COVID data reported for this case, or your State Code is not correct."
     } else {
       let stateCovidData = (relevantStateDataObject.confirmedCasesIndian || 0) + (relevantStateDataObject.confirmedCasesIndian || 0);
       message = `As per the last published official data, the total number of COVID positive patients in ${state} have been ${stateCovidData}`;
