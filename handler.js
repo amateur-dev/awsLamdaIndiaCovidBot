@@ -26,8 +26,29 @@ async function getDistrictDetails(inputstate, inputdistrict) {
   // console.log(stateData);
   let fullDistrictData = stateData.districtData;
   // console.log(fullDistrictData);
-  let districtDetails = fullDistrictData.find(obj => obj.district == inputdistrict);
-  return [districtDetails.confirmed, districtDetails.delta.confirmed];
+  let districtDetails;
+  try {
+    let details = fullDistrictData.find(obj => obj.district == inputdistrict);
+    if (details === undefined) {
+      throw "error" }
+    districtDetails = details;
+  } catch (error) {
+    districtDetails = { confirmed: 0, delta: { confirmed: 0 } }
+  }
+  
+  let districtDetailsUnknown;
+  try {
+    let details = fullDistrictData.find(obj => obj.district == "Unknown");
+    if (details == undefined) {
+      throw "error";
+    }
+    districtDetailsUnknown = details.confirmed;
+  } catch (error) {
+    districtDetailsUnknown = 0;
+  }
+  
+  // console.log(districtDetails.confirmed, districtDetails.delta.confirmed, districtDetailsUnknown);
+  return [districtDetails.confirmed, districtDetails.delta.confirmed, districtDetailsUnknown];
   console.log(districtDetails);
   console.log(`The total unofficial number of confirmed cases in this district are ${districtDetails.confirmed}; the number of patients confirmed in the last 24 hours are ${districtDetails.delta.confirmed}.`);
 };
@@ -42,7 +63,8 @@ async function sendToUser(chat_id, text) {
     uri: `https://api.telegram.org/bot${process.env.TGTOKEN}/sendMessage`,
     qs: {
       chat_id,
-      text
+      text,
+      parse_mode: "HTML"
     }
   };
   return rp(options);
@@ -127,7 +149,14 @@ module.exports.covidbot = async event => {
       message = "Sorry, we did not get any data for this State. Either there has been no COVID data reported for this case, or your State Code is not correct."
     } else {
       let stateCovidData = (relevantStateDataObject.confirmedCasesIndian || 0) + (relevantStateDataObject.confirmedCasesForeign || 0);
-      message = `As per the last published official data, the total number of COVID positive patients in ${state} have been ${stateCovidData}`;
+      let stateCovidDataDischarged = relevantStateDataObject.discharged;
+
+      message =
+        (stateCovidDataDischarged > 0) ?
+          `As per the last published official data, the total number of COVID positive patients in ${state} have been ${stateCovidData}. On the bright side, ${stateCovidDataDischarged} have been cured and discharged in ${state}`
+          :
+          `As per the last published official data, the total number of COVID positive patients in ${state} have been ${stateCovidData}`
+
     }
   } else if (/Pin/i.test(text)) {
     let pinCodeReplied = PinSplitter(text);
@@ -135,7 +164,13 @@ module.exports.covidbot = async event => {
       let regionDetails = await getPinCodeDetails(Number(pinCodeReplied));
       try {
         let regionReply = await getDistrictDetails(regionDetails[0], regionDetails[1]);
-        message = `The total __unofficial__ number of confirmed cases in ${regionDetails[1]}, ${regionDetails[0]} are ${regionReply[0]}; the number of patients confirmed in the last 24 hours are ${regionReply[1]}.`
+        
+        let text1 = (regionReply[0] > 0) ? `The total <i>unofficial</i> number of confirmed cases in ${regionDetails[1]}, ${regionDetails[0]} are ${regionReply[0]};` + ` the number of patients confirmed in the last 24 hours are ${regionReply[1]}.` : `Good news! As per the data available with us, there are no confirmed cases reported for ${regionDetails[1]}.`
+        
+        let text2 = (regionReply[2] > 0) ? `However, do note that ${regionDetails[0]} has also reported ${regionReply[2]} number of confirmed cases with no disctrict details - we are not able to confirm if these cases may or may not belong to your requested district.` : `For additional reference, ${regionDetails[0]} has not reported any case which as "Unknown" district.`;
+
+        message = text1 + " " + text2;
+        
       } catch (error) {
         message = "Apologies, the Pin Code that you have entered did not generate any results. Either no case has been reported for this Pin Code or the Pin Code is wrong."
       }
