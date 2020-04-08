@@ -1,4 +1,4 @@
-service: awscovidbot
+service: awscovidbot2
 
 
 provider:
@@ -7,7 +7,7 @@ provider:
 
 
 functions:
-  awscovidbot:
+  awscovidbot2:
   
     handler: handler.covidbot
     
