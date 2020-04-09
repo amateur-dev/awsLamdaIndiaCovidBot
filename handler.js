@@ -174,8 +174,12 @@ module.exports.covidbot = async event => {
       `As per the last published official data, the total number of COVID positive patients in ${state} have been ${stateCovidData}. On the bright side, ${stateCovidDataDischarged} have been cured and discharged in ${state}.`
       :
       `As per the last published official data, the total number of COVID positive patients in ${state} have been ${stateCovidData}.`
-      let text2 = await getPhoneNumbers(state);
-      message = text1 + " " + text2;
+      try {
+        let text2 = "You may also note that " + (await getPhoneNumbers(regionDetails[0])).replace(/The/i, "the");
+        message = text1 + " " + text2;
+      } catch (error) {
+        message = text1;
+      }
           
 
     }
@@ -190,9 +194,15 @@ module.exports.covidbot = async event => {
         
         let text2 = (regionReply[2] > 0) ? `However, do note that ${regionDetails[0]} has also reported ${regionReply[2]} number of confirmed cases with no disctrict details - we are not able to confirm if these cases may or may not belong to your requested district.` : `For additional reference, ${regionDetails[0]} has not reported any case which as "Unknown" district.`;
 
-        let text3 = "You may also note that " + (await getPhoneNumbers(regionDetails[0])).replace(/The/i, "the")
+        try {
+          let text3 = "You may also note that " + (await getPhoneNumbers(regionDetails[0])).replace(/The/i, "the");
+          message = text1 + " " + text2 + " " + text3;
+        } catch (error) {
+          message = text1 + " " + text2
+        }
+        
 
-        message = text1 + " " + text2 + " " + text3;
+        
         
       } catch (error) {
         message = "Apologies, the Pin Code that you have entered did not generate any results. Either no case has been reported for this Pin Code or the Pin Code is wrong."
@@ -205,9 +215,13 @@ module.exports.covidbot = async event => {
   } else if (/emergency_numbers/i.test(text)) {
     message = `State Codes:\n${stateCodeString}\nSure, please choose from the above mentioned State Codes and reply \"EN:XX\".\nPlease make sure that the State Code is in Capital Letters.`;
   } else if (/EN/i.test(text)) {
-    let stateCodeChosen = stringSplitter(text);
-    let state = stateCodes[stateCodeChosen];
-    message = await getPhoneNumbers(state)
+    try {
+      let stateCodeChosen = stringSplitter(text);
+      let state = stateCodes[stateCodeChosen];
+      message = await getPhoneNumbers(state)
+    } catch (error) {
+      message = "Sorry, we did not get any data for this State. May be the State Code is not correct."
+    }
   } else {
     message = "Sorry, I do not understand your message."
   }
