@@ -2,6 +2,10 @@
 const rp = require('request-promise');
 const axios = require("axios");
 
+// https://api.covid19india.org/
+// https://api.covid19india.org/v2/state_district_wise.json
+// https://api.postalpincode.in/pincode/400001
+
 async function getCovidData() {
   var reply = await axios.get("https://api.rootnet.in/covid19-in/stats/latest")
   return (reply.data.data)
@@ -53,9 +57,25 @@ async function getDistrictDetails(inputstate, inputdistrict) {
   console.log(`The total unofficial number of confirmed cases in this district are ${districtDetails.confirmed}; the number of patients confirmed in the last 24 hours are ${districtDetails.delta.confirmed}.`);
 };
 
-// https://api.covid19india.org/
-// https://api.covid19india.org/v2/state_district_wise.json
-// https://api.postalpincode.in/pincode/400001
+async function getPhoneNumbers(state) {
+  var reply = await axios.get(`https://spreadsheets.google.com/feeds/list/1Cq9yLURiA5KW_nM3_beW32UaRFLmV8K77Z7e8pt3FOM/od6/public/values?alt=json`);
+  let entries = reply.data.feed.entry
+  // console.log(entries[0])
+  let ans = entries.find(obj => obj["title"]['$t'] === state);
+  // console.log(ans)
+  let phoneNumbers=[];
+  // let num = 3
+  // console.log(ans[`gsx$phoneno${num}`]["$t"])
+  for (let i=1;i<7;i++) {
+    phoneNumbers.push(ans[`gsx$phoneno${i}`]["$t"])
+  }
+  console.log(phoneNumbers);
+  phoneNumbers = phoneNumbers.filter(Boolean);
+  let message = `The emergency helpline numbers of ${state} are ` + phoneNumbers.toString().replace(/,/g, ', ');
+  // console.log(message);
+  return message;
+}
+
 
 async function sendToUser(chat_id, text) {
   const options = {
@@ -150,12 +170,13 @@ module.exports.covidbot = async event => {
     } else {
       let stateCovidData = (relevantStateDataObject.confirmedCasesIndian || 0) + (relevantStateDataObject.confirmedCasesForeign || 0);
       let stateCovidDataDischarged = relevantStateDataObject.discharged;
-
-      message =
-        (stateCovidDataDischarged > 0) ?
-          `As per the last published official data, the total number of COVID positive patients in ${state} have been ${stateCovidData}. On the bright side, ${stateCovidDataDischarged} have been cured and discharged in ${state}`
-          :
-          `As per the last published official data, the total number of COVID positive patients in ${state} have been ${stateCovidData}`
+      let text1 = (stateCovidDataDischarged > 0) ?
+      `As per the last published official data, the total number of COVID positive patients in ${state} have been ${stateCovidData}. On the bright side, ${stateCovidDataDischarged} have been cured and discharged in ${state}.`
+      :
+      `As per the last published official data, the total number of COVID positive patients in ${state} have been ${stateCovidData}.`
+      let text2 = await getPhoneNumbers(state);
+      message = text1 + " " + text2;
+          
 
     }
   } else if (/Pin/i.test(text)) {
@@ -169,7 +190,9 @@ module.exports.covidbot = async event => {
         
         let text2 = (regionReply[2] > 0) ? `However, do note that ${regionDetails[0]} has also reported ${regionReply[2]} number of confirmed cases with no disctrict details - we are not able to confirm if these cases may or may not belong to your requested district.` : `For additional reference, ${regionDetails[0]} has not reported any case which as "Unknown" district.`;
 
-        message = text1 + " " + text2;
+        let text3 = "You may also note that " + (await getPhoneNumbers(regionDetails[0])).replace(/The/i, "the")
+
+        message = text1 + " " + text2 + " " + text3;
         
       } catch (error) {
         message = "Apologies, the Pin Code that you have entered did not generate any results. Either no case has been reported for this Pin Code or the Pin Code is wrong."
@@ -179,16 +202,15 @@ module.exports.covidbot = async event => {
     }
   } else if (/Thank/i.test(text)) {
     message = "Thanks to you for using it. Please stay safe and take care."
+  } else if (/emergency_numbers/i.test(text)) {
+    message = `State Codes:\n${stateCodeString}\nSure, please choose from the above mentioned State Codes and reply \"EN:XX\".\nPlease make sure that the State Code is in Capital Letters.`;
+  } else if (/EN/i.test(text)) {
+    let stateCodeChosen = stringSplitter(text);
+    let state = stateCodes[stateCodeChosen];
+    message = await getPhoneNumbers(state)
   } else {
     message = "Sorry, I do not understand your message."
   }
-
-  // let message;
-  // if (text == "/getlatestdata") {
-  //   message = "The current total number of officially confirmed cases are "+ result.summary.total;
-  // } else {
-  //   message = `Hi, Thank you for reaching out.  Please use the available commands to check the latest data.`;
-  // }
 
   await sendToUser(chat.id, message);
 
